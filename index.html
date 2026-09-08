@@ -35,78 +35,7 @@
 
 			<!-- チャット一覧 -->
 			<div class="chat-list" id="chatList">
-
-				<button class="chat-item active" data-chat="0">
-
-					<div class="avatar avatar-blue">
-						Y
-					</div>
-
-					<div class="chat-info">
-						<div class="chat-name">
-							山田 太郎
-							<span class="online"></span>
-						</div>
-
-						<div class="last-message">
-							こんにちは！
-						</div>
-					</div>
-
-					<div class="chat-meta">
-						<span class="chat-time">18:02</span>
-						<span class="unread">2</span>
-					</div>
-
-				</button>
-
-
-				<button class="chat-item" data-chat="1">
-
-					<div class="avatar avatar-green">
-						S
-					</div>
-
-					<div class="chat-info">
-						<div class="chat-name">
-							佐藤 花子
-							<span class="online"></span>
-						</div>
-
-						<div class="last-message">
-							明日の件ですが
-						</div>
-					</div>
-
-					<div class="chat-meta">
-						<span class="chat-time">17:41</span>
-					</div>
-
-				</button>
-
-
-				<button class="chat-item" data-chat="2">
-
-					<div class="avatar avatar-purple">
-						T
-					</div>
-
-					<div class="chat-info">
-						<div class="chat-name">
-							鈴木 一郎
-						</div>
-
-						<div class="last-message">
-							OKです！
-						</div>
-					</div>
-
-					<div class="chat-meta">
-						<span class="chat-time">16:20</span>
-					</div>
-
-				</button>
-
+				<!-- JavaScriptでSupabaseのチャット一覧を生成 -->
 			</div>
 
 		</aside>
@@ -127,16 +56,16 @@
 				<div class="header-user">
 
 					<div class="avatar avatar-blue" id="headerAvatar">
-						Y
+						G
 					</div>
 
 					<div>
 						<h2 id="headerName">
-							山田 太郎
+							公開チャット
 						</h2>
 
 						<p id="headerStatus">
-							オンライン
+							みんなでチャット
 						</p>
 					</div>
 
@@ -159,91 +88,9 @@
 
 			<!-- メッセージ -->
 			<section class="messages" id="messages">
-
 				<div class="date-divider">
 					<span>今日</span>
 				</div>
-
-
-				<!-- 相手 -->
-				<div class="message-row received">
-
-					<div class="message-avatar">
-						Y
-					</div>
-
-					<div class="message-content">
-
-						<div class="message-bubble">
-							こんにちは！
-						</div>
-
-						<span class="message-time">
-							17:58
-						</span>
-
-					</div>
-
-				</div>
-
-
-				<!-- 自分 -->
-				<div class="message-row sent">
-
-					<div class="message-content">
-
-						<div class="message-bubble">
-							こんにちは！
-						</div>
-
-						<span class="message-time">
-							18:00
-						</span>
-
-					</div>
-
-				</div>
-
-
-				<!-- 相手 -->
-				<div class="message-row received">
-
-					<div class="message-avatar">
-						Y
-					</div>
-
-					<div class="message-content">
-
-						<div class="message-bubble">
-							今日の予定はどうしますか？
-						</div>
-
-						<span class="message-time">
-							18:01
-						</span>
-
-					</div>
-
-				</div>
-
-
-				<!-- 自分 -->
-				<div class="message-row sent">
-
-					<div class="message-content">
-
-						<div class="message-bubble">
-							19時くらいに行きましょう！
-						</div>
-
-						<span class="message-time">
-							18:02
-						</span>
-
-					</div>
-
-				</div>
-
 			</section>
 
 

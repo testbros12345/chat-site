@@ -469,6 +469,35 @@ body {
     font-weight: 600;
 }
 
+/* guest_id ごとに割り当てるアイコンカラー */
+.message-avatar.avatar-blue {
+    background: #4f7cff;
+}
+
+.message-avatar.avatar-green {
+    background: #36a269;
+}
+
+.message-avatar.avatar-purple {
+    background: #8b5cf6;
+}
+
+.message-avatar.avatar-orange {
+    background: #f59e0b;
+}
+
+.message-avatar.avatar-pink {
+    background: #ec4899;
+}
+
+.message-avatar.avatar-cyan {
+    background: #06b6d4;
+}
+
+.message-avatar.avatar-gray {
+    background: #8b95a5;
+}
+
 .message-content {
     display: flex;
     flex-direction: column;

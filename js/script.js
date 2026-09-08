@@ -3,29 +3,18 @@
 ========================= */
 
 const chatApp = document.querySelector(".chat-app");
-
-const chatItems = document.querySelectorAll(".chat-item");
-
+const chatList = document.getElementById("chatList");
 const messages = document.getElementById("messages");
-
 const messageInput = document.getElementById("messageInput");
-
 const sendBtn = document.getElementById("sendBtn");
-
 const backBtn = document.getElementById("backBtn");
-
 const searchInput = document.getElementById("searchInput");
-
 const fileBtn = document.getElementById("fileBtn");
-
 const fileInput = document.getElementById("fileInput");
-
 const emojiBtn = document.getElementById("emojiBtn");
-
+const newChatBtn = document.getElementById("newChatBtn");
 const headerName = document.getElementById("headerName");
-
 const headerAvatar = document.getElementById("headerAvatar");
-
 const headerStatus = document.getElementById("headerStatus");
 
 /* =========================
@@ -36,76 +25,137 @@ let guestId = localStorage.getItem("guestId");
 
 if (!guestId) {
     guestId = crypto.randomUUID();
-
-    localStorage.setItem(
-        "guestId",
-        guestId
-    );
+    localStorage.setItem("guestId", guestId);
 }
 
 console.log("匿名ユーザーID:", guestId);
 
 /* =========================
-   チャットデータ
+   guest_id からアイコン色を決定
+   同じ guest_id は常に同じ色になります
 ========================= */
+
+const avatarColors = [
+    "avatar-blue",
+    "avatar-green",
+    "avatar-purple",
+    "avatar-orange",
+    "avatar-pink",
+    "avatar-cyan"
+];
+
+function getAvatarColor(guestId) {
+
+    if (!guestId) {
+        return "avatar-gray";
+    }
+
+    let hash = 0;
+
+    for (let i = 0; i < guestId.length; i++) {
+        hash =
+            guestId.charCodeAt(i) +
+            ((hash << 5) - hash);
+    }
+
+    const index =
+        Math.abs(hash) % avatarColors.length;
+
+    return avatarColors[index];
+}
+
+/* =========================
+   チャット
+   ※匿名版では公開チャット1つを使用
+========================= */
+
+const PUBLIC_CHAT_ID =
+    "00000000-0000-0000-0000-000000000001";
 
 const chats = [
     {
-        name: "山田 太郎",
-        avatar: "Y",
+        id: PUBLIC_CHAT_ID,
+        name: "公開チャット",
+        avatar: "G",
         color: "avatar-blue",
-        status: "オンライン"
-    },
-
-    {
-        name: "佐藤 花子",
-        avatar: "S",
-        color: "avatar-green",
-        status: "オンライン"
-    },
-
-    {
-        name: "鈴木 一郎",
-        avatar: "T",
-        color: "avatar-purple",
-        status: "オフライン"
+        status: "みんなでチャット",
+        lastMessage: "誰でも参加できます",
+        time: ""
     }
 ];
 
+let currentChatId = PUBLIC_CHAT_ID;
+
+/* =========================
+   チャットリスト生成
+========================= */
+
+function renderChatList() {
+
+    chatList.innerHTML = "";
+
+    chats.forEach((chat, index) => {
+
+        const item = document.createElement("button");
+
+        item.className =
+            "chat-item" +
+            (chat.id === currentChatId ? " active" : "");
+
+        item.dataset.chatId = chat.id;
+
+        item.innerHTML = `
+            <div class="avatar ${chat.color}">
+                ${escapeHTML(chat.avatar)}
+            </div>
+
+            <div class="chat-info">
+                <div class="chat-name">
+                    ${escapeHTML(chat.name)}
+                    <span class="online"></span>
+                </div>
+
+                <div class="last-message">
+                    ${escapeHTML(chat.lastMessage)}
+                </div>
+            </div>
+
+            <div class="chat-meta">
+                <span class="chat-time">
+                    ${escapeHTML(chat.time)}
+                </span>
+            </div>
+        `;
+
+        item.addEventListener("click", () => {
+            selectChat(chat.id);
+        });
+
+        chatList.appendChild(item);
+    });
+}
 
 /* =========================
    チャット選択
 ========================= */
 
-chatItems.forEach(item => {
+async function selectChat(chatId) {
 
-    item.addEventListener("click", () => {
+    const chat =
+        chats.find(item => item.id === chatId);
 
-        const chatIndex = Number(
-            item.dataset.chat
-        );
+    if (!chat) return;
 
-        selectChat(chatIndex);
+    currentChatId = chatId;
 
-    });
-
-});
-
-
-function selectChat(index) {
-
-    const chat = chats[index];
-
-    /* active変更 */
-
-    chatItems.forEach(item => {
-        item.classList.remove("active");
-    });
-
-    chatItems[index].classList.add("active");
-
-
-    /* ヘッダー変更 */
+    document
+        .querySelectorAll(".chat-item")
+        .forEach(item => {
+            item.classList.toggle(
+                "active",
+                item.dataset.chatId === chatId
+            );
+        });
 
     headerName.textContent = chat.name;
 
@@ -116,31 +166,15 @@ function selectChat(index) {
 
     headerStatus.textContent = chat.status;
 
-
-    /* スマホ */
-
     chatApp.classList.add("chat-open");
 
-
-    /* 入力欄 */
+    await loadMessages();
 
     messageInput.focus();
-
 }
 
-
 /* =========================
-   メッセージ送信
-========================= */
-
-/* =========================
-   メッセージ送信
-========================= */
-
-const PUBLIC_CHAT_ID =
-    "00000000-0000-0000-0000-000000000001";
-/* =========================
-   Supabaseからメッセージ読み込み
+   メッセージ読み込み
 ========================= */
 
 async function loadMessages() {
@@ -148,7 +182,7 @@ async function loadMessages() {
     const { data, error } = await supabaseClient
         .from("messages")
         .select("*")
-        .eq("chat_id", PUBLIC_CHAT_ID)
+        .eq("chat_id", currentChatId)
         .is("deleted_at", null)
         .order("created_at", {
             ascending: true
@@ -172,8 +206,9 @@ async function loadMessages() {
         renderMessage(message);
     });
 
-    messages.scrollTop =
-        messages.scrollHeight;
+    updateChatPreview(data[data.length - 1]);
+
+    scrollMessages();
 }
 
 /* =========================
@@ -181,6 +216,10 @@ async function loadMessages() {
 ========================= */
 
 function renderMessage(message) {
+
+    if (!message || message.chat_id !== currentChatId) {
+        return;
+    }
 
     const messageRow =
         document.createElement("div");
@@ -210,36 +249,117 @@ function renderMessage(message) {
     if (isMine) {
 
         messageRow.innerHTML = `
-        <div class="message-content">
-            <div class="message-bubble">
-                ${escapeHTML(message.content || "")}
-            </div>
+            <div class="message-content">
+                <div class="message-bubble">
+                    ${escapeHTML(message.content || "")}
+                </div>
 
-            <span class="message-time">
-                ${time}
-            </span>
-        </div>
-    `;
+                <span class="message-time">
+                    ${time}
+                </span>
+            </div>
+        `;
 
     } else {
 
         messageRow.innerHTML = `
-        <div class="message-avatar">G</div>
+            <div class="message-avatar ${getAvatarColor(message.guest_id)}">G</div>
 
-        <div class="message-content">
-            <div class="message-bubble">
-                ${escapeHTML(message.content || "")}
+            <div class="message-content">
+                <div class="message-bubble">
+                    ${escapeHTML(message.content || "")}
+                </div>
+
+                <span class="message-time">
+                    ${time}
+                </span>
             </div>
-
-            <span class="message-time">
-                ${time}
-            </span>
-        </div>
-    `;
+        `;
 
     }
 
     messages.appendChild(messageRow);
+}
+
+/* =========================
+   メッセージ送信
+========================= */
+
+async function sendMessage() {
+
+    const text =
+        messageInput.value.trim();
+
+    if (text === "") return;
+
+    sendBtn.disabled = true;
+
+    const { data, error } =
+        await supabaseClient
+            .from("messages")
+            .insert({
+                chat_id: currentChatId,
+                sender_id: null,
+                guest_id: guestId,
+                content: text,
+                message_type: "text"
+            })
+            .select()
+            .single();
+
+    if (error) {
+
+        console.error(
+            "メッセージ保存エラー:",
+            error
+        );
+
+        alert(
+            "メッセージを送信できませんでした。"
+        );
+
+        sendBtn.disabled = false;
+        return;
+    }
+
+    console.log(
+        "メッセージ保存成功:",
+        data
+    );
+
+    messageInput.value = "";
+
+    updateChatPreview(data);
+
+    sendBtn.disabled = false;
+    messageInput.focus();
+}
+
+/* =========================
+   チャットリストの最新メッセージ更新
+========================= */
+
+function updateChatPreview(message) {
+
+    if (!message) return;
+
+    const chat =
+        chats.find(item =>
+            item.id === message.chat_id
+        );
+
+    if (!chat) return;
+
+    chat.lastMessage =
+        message.content || "";
+
+    const date =
+        new Date(message.created_at);
+
+    chat.time =
+        `${String(date.getHours()).padStart(2, "0")}:${String(date.getMinutes()).padStart(2, "0")}`;
+
+    renderChatList();
 }
 
 /* =========================
@@ -266,12 +386,22 @@ function subscribeToMessages() {
                     payload.new
                 );
 
+                if (
+                    payload.new.chat_id !==
+                    currentChatId
+                ) {
+                    return;
+                }
+
                 renderMessage(
                     payload.new
                 );
 
-                messages.scrollTop =
-                    messages.scrollHeight;
+                updateChatPreview(
+                    payload.new
+                );
+
+                scrollMessages();
             }
         )
         .subscribe(status => {
@@ -284,50 +414,15 @@ function subscribeToMessages() {
         });
 }
 
-async function sendMessage() {
+/* =========================
+   スクロール
+========================= */
 
-    const text = messageInput.value.trim();
+function scrollMessages() {
 
-    if (text === "") return;
-
-    sendBtn.disabled = true;
-
-    const { data, error } = await supabaseClient
-        .from("messages")
-        .insert({
-            chat_id: PUBLIC_CHAT_ID,
-            sender_id: null,
-            guest_id: guestId,
-            content: text,
-            message_type: "text"
-        })
-        .select()
-        .single();
-
-    if (error) {
-
-        console.error(
-            "メッセージ保存エラー:",
-            error
-        );
-
-        alert("メッセージを送信できませんでした。");
-
-        sendBtn.disabled = false;
-
-        return;
-    }
-
-    console.log(
-        "メッセージ保存成功:",
-        data
-    );
-
-    messageInput.value = "";
-
-    sendBtn.disabled = false;
+    messages.scrollTop =
+        messages.scrollHeight;
 }
-
 
 /* =========================
    Enter送信
@@ -345,18 +440,14 @@ messageInput.addEventListener(
             event.preventDefault();
 
             sendMessage();
-
         }
-
     }
 );
-
 
 sendBtn.addEventListener(
     "click",
     sendMessage
 );
-
 
 /* =========================
    HTMLエスケープ
@@ -372,35 +463,6 @@ function escapeHTML(text) {
     return div.innerHTML;
 }
 
-
-/* =========================
-   Supabase 保存
-========================= */
-
-async function saveMessage(text) {
-
-    const { data, error } = await supabaseClient
-        .from("messages")
-        .insert({
-            chat_id: null,
-            sender_id: null,
-            content: text,
-            message_type: "text"
-        })
-        .select()
-        .single();
-
-    if (error) {
-        console.error("メッセージ保存エラー:", error);
-        return null;
-    }
-
-    console.log("メッセージ保存成功:", data);
-
-    return data;
-}
-
-
 /* =========================
    検索
 ========================= */
@@ -414,33 +476,23 @@ searchInput.addEventListener(
                 .toLowerCase()
                 .trim();
 
+        document
+            .querySelectorAll(".chat-item")
+            .forEach(item => {
 
-        chatItems.forEach(item => {
+                const name =
+                    item
+                        .querySelector(".chat-name")
+                        .textContent
+                        .toLowerCase();
 
-            const name =
-                item
-                    .querySelector(".chat-name")
-                    .textContent
-                    .toLowerCase();
-
-
-            if (
-                name.includes(keyword)
-            ) {
-
-                item.style.display = "flex";
-
-            } else {
-
-                item.style.display = "none";
-
-            }
-
-        });
-
+                item.style.display =
+                    name.includes(keyword)
+                        ? "flex"
+                        : "none";
+            });
     }
 );
-
 
 /* =========================
    戻る
@@ -453,10 +505,22 @@ backBtn.addEventListener(
         chatApp.classList.remove(
             "chat-open"
         );
-
     }
 );
 
+/* =========================
+   新規チャット
+========================= */
+
+newChatBtn.addEventListener(
+    "click",
+    () => {
+
+        alert(
+            "現在は匿名の公開チャットのみ利用できます。\nユーザー検索・1対1チャットはログイン機能追加後に実装します。"
+        );
+    }
+);
 
 /* =========================
    ファイル
@@ -465,12 +529,9 @@ backBtn.addEventListener(
 fileBtn.addEventListener(
     "click",
     () => {
-
         fileInput.click();
-
     }
 );
-
 
 fileInput.addEventListener(
     "change",
@@ -479,18 +540,14 @@ fileInput.addEventListener(
         const file =
             fileInput.files[0];
 
-        if (!file) {
-            return;
-        }
+        if (!file) return;
 
         messageInput.value =
             `📎 ${file.name}`;
 
         messageInput.focus();
-
     }
 );
-
 
 /* =========================
    絵文字
@@ -503,9 +560,13 @@ emojiBtn.addEventListener(
         messageInput.value += " 😊";
 
         messageInput.focus();
-
     }
 );
 
+/* =========================
+   初期化
+========================= */
+
+renderChatList();
 loadMessages();
 subscribeToMessages();
